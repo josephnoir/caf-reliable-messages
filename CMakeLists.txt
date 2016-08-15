@@ -68,7 +68,9 @@ include_directories(. include)
 
 set(SOURCES
   src/main.cpp
+  src/reliable_broker.cpp
 )
+file(GLOB_RECURSE HEADERS "include/*.hpp")
 
-add_executable(relm ${SOURCES})
+add_executable(relm ${SOURCES} ${HEADERS})
 target_link_libraries(relm  ${CMAKE_DL_LIBS} ${CAF_LIBRARY_CORE} ${CAF_LIBRARY_IO})
