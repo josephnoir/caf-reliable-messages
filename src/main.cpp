@@ -17,6 +17,7 @@
 
 using namespace std;
 using namespace caf;
+using namespace relm;
 
 class config : public actor_system_config {
 public:
@@ -32,15 +33,32 @@ public:
   }
 };
 
-int main(int argc, char** argv) {
-  config cfg;
-  // read CLI options
-  cfg.parse(argc, argv);
-  // return immediately if a help text was printed
-  if (cfg.cli_helptext_printed)
-    return 0;
-  // load modules
-  cfg.load<io::middleman>();
-  // create actor system and call caf_main
-  actor_system system{cfg};
+void caf_main(actor_system& system, const config& cfg) {
+  if (cfg.server_mode) {
+    cout << "run in server mode" << endl;
+    auto pong_actor = system.spawn(pong);
+    auto server_actor = system.middleman().spawn_server(server, cfg.port,
+                                                        pong_actor);
+    if (!server_actor) {
+      std::cerr << "failed to spawn server: "
+                << system.render(server_actor.error()) << endl;
+      return;
+    }
+    print_on_exit(*server_actor, "server");
+    print_on_exit(pong_actor, "pong");
+    return;
+  }
+  auto ping_actor = system.spawn(ping, size_t{100});
+  auto io_actor = system.middleman().spawn_client(broker_impl, cfg.host,
+                                                  cfg.port, ping_actor);
+  if (!io_actor) {
+    std::cerr << "failed to spawn client: "
+               << system.render(io_actor.error()) << endl;
+    return;
+  }
+  print_on_exit(ping_actor, "ping");
+  print_on_exit(*io_actor, "protobuf_io");
+  send_as(*io_actor, ping_actor, kickoff_atom::value, *io_actor);
 }
+
+CAF_MAIN(io::middleman)

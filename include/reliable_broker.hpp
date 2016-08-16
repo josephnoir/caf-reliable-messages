@@ -1,4 +1,11 @@
-// mostly copied from simple_broker example in CAF
+// simple_broker example from CAF as a base
+
+#ifdef WIN32
+# define _WIN32_WINNT 0x0600
+# include <Winsock2.h>
+#else
+# include <arpa/inet.h> // htonl
+#endif
 
 #include <chrono>
 #include <vector>
@@ -7,14 +14,16 @@
 #include <caf/all.hpp>
 #include <caf/io/all.hpp>
 
-namespace {
+namespace relm {
 
 using seq_num_t = int32_t;
 using retransmit_cnt = int32_t;
 using clk = std::chrono::high_resolution_clock;
 using tp = clk::time_point;
 
-}
+using ping_atom = caf::atom_constant<caf::atom("ping")>;
+using pong_atom = caf::atom_constant<caf::atom("pong")>;
+using kickoff_atom = caf::atom_constant<caf::atom("kickoff")>;
 
 struct pending_msg {
   caf::atom_value atm;
@@ -64,3 +73,5 @@ caf::behavior broker_impl(caf::io::stateful_broker<reliability_state>* self,
                           const caf::actor& buddy);
 caf::behavior server(caf::io::stateful_broker<reliability_state>* self,
                      const caf::actor& buddy);
+
+} // namespace relm
