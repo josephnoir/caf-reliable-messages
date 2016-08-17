@@ -103,7 +103,7 @@ behavior reliability_actor(stateful_actor<reliability_state>* self,
       self->state.pending.push_back(msg);
       self->delayed_send(self, default_timeout, retransmit_atom::value, seq);
       self->state.next += 1; // increase sequence number for next packet
-    },
+    }
   };
 }
 

@@ -65,7 +65,7 @@ void caf_main(actor_system& system, const config& cfg) {
   print_on_exit(application, "application");
   print_on_exit(reliability, "reliability");
   print_on_exit(*client, "client");
-  send_as(reliability, application, kickoff_atom::value, *client);
+  send_as(reliability, application, kickoff_atom::value, reliability);
 }
 
 CAF_MAIN(io::middleman)
