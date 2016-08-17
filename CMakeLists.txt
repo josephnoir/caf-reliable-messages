@@ -68,7 +68,10 @@ include_directories(. include)
 
 set(SOURCES
   src/main.cpp
-  src/reliable_broker.cpp
+  src/utility.cpp
+  src/ping_pong.cpp
+  src/unreliable_broker.cpp
+  src/reliability_actor.cpp
 )
 file(GLOB_RECURSE HEADERS "include/*.hpp")
 

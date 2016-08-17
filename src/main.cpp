@@ -13,7 +13,10 @@
 #include <caf/io/all.hpp>
 #include <caf/io/middleman.hpp>
 
-#include "include/reliable_broker.hpp"
+#include "include/utility.hpp"
+#include "include/ping_pong.hpp"
+#include "include/reliability_actor.hpp"
+#include "include/unreliable_broker.hpp"
 
 using namespace std;
 using namespace caf;
@@ -36,29 +39,33 @@ public:
 void caf_main(actor_system& system, const config& cfg) {
   if (cfg.server_mode) {
     cout << "run in server mode" << endl;
-    auto pong_actor = system.spawn(pong);
-    auto server_actor = system.middleman().spawn_server(server, cfg.port,
-                                                        pong_actor);
-    if (!server_actor) {
+    auto application = system.spawn(pong);
+    auto reliability = system.spawn(boostrap_reliability_actor, application);
+    auto server = system.middleman().spawn_server(relm::server, cfg.port,
+                                                  reliability);
+    if (!server) {
       std::cerr << "failed to spawn server: "
-                << system.render(server_actor.error()) << endl;
+                << system.render(server.error()) << endl;
       return;
     }
-    print_on_exit(*server_actor, "server");
-    print_on_exit(pong_actor, "pong");
+    print_on_exit(reliability, "reliability");
+    print_on_exit(application, "application");
+    print_on_exit(*server, "server");
     return;
   }
-  auto ping_actor = system.spawn(ping, size_t{100});
-  auto io_actor = system.middleman().spawn_client(broker_impl, cfg.host,
-                                                  cfg.port, ping_actor);
-  if (!io_actor) {
+  auto application = system.spawn(ping, size_t{100});
+  auto reliability = system.spawn(boostrap_reliability_actor, application);
+  auto client = system.middleman().spawn_client(broker_impl, cfg.host,
+                                                cfg.port, reliability);
+  if (!client) {
     std::cerr << "failed to spawn client: "
-               << system.render(io_actor.error()) << endl;
+               << system.render(client.error()) << endl;
     return;
   }
-  print_on_exit(ping_actor, "ping");
-  print_on_exit(*io_actor, "protobuf_io");
-  send_as(*io_actor, ping_actor, kickoff_atom::value, *io_actor);
+  print_on_exit(application, "application");
+  print_on_exit(reliability, "reliability");
+  print_on_exit(*client, "client");
+  send_as(reliability, application, kickoff_atom::value, *client);
 }
 
 CAF_MAIN(io::middleman)
