@@ -53,7 +53,7 @@ void caf_main(actor_system& system, const config& cfg) {
     print_on_exit(*server, "server");
     return;
   }
-  auto application = system.spawn(ping, size_t{100});
+  auto application = system.spawn(ping, size_t{42});
   auto reliability = system.spawn(boostrap_reliability_actor, application);
   auto client = system.middleman().spawn_client(broker_impl, cfg.host,
                                                 cfg.port, reliability);

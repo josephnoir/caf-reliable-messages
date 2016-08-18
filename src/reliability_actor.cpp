@@ -28,6 +28,8 @@ string to_string(const reliable_msg& msg) {
 }
 
 behavior boostrap_reliability_actor(stateful_actor<reliability_state>* self, const actor& buddy) {
+  aout(self) << "Bootstrapping, awaiting message from broker" << endl;
+  self->set_default_handler(skip);
   return {
     [=] (register_atom, const actor& broker) {
       self->become(reliability_actor(self, buddy, broker));
@@ -37,11 +39,13 @@ behavior boostrap_reliability_actor(stateful_actor<reliability_state>* self, con
 
 behavior reliability_actor(stateful_actor<reliability_state>* self, 
                            const actor& buddy, const actor& broker) {
+  self->set_default_handler(print_and_drop);
+  aout(self) << "Bootstrapping done, now running." << endl;
   return {
     [=](ack_atom, seq_num_t seq) {
       auto& pending = self->state.pending;
       auto msg_itr = find_if(begin(pending), end(pending),
-        [seq](const reliable_msg& elem){
+        [seq](const reliable_msg& elem) {
           return elem.seq == seq;
         }
       );
@@ -57,7 +61,7 @@ behavior reliability_actor(stateful_actor<reliability_state>* self,
       // for it instead of using a separate timers for each possible retransmit.
       auto& pending = self->state.pending;
       auto msg_itr = find_if(begin(pending), end(pending),
-        [seq](const reliable_msg& elem){
+        [seq](const reliable_msg& elem) {
           return elem.seq == seq;
         }
       );
@@ -103,6 +107,9 @@ behavior reliability_actor(stateful_actor<reliability_state>* self,
       self->state.pending.push_back(msg);
       self->delayed_send(self, default_timeout, retransmit_atom::value, seq);
       self->state.next += 1; // increase sequence number for next packet
+    },
+    [=](ping_atom, int32_t) {
+      aout(self) << "I was not expecting this!" << endl;
     }
   };
 }

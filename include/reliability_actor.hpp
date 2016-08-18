@@ -29,6 +29,7 @@ struct reliability_state {
   seq_num_t next = 0;
   std::vector<reliable_msg> pending;
   std::vector<reliable_msg> early;
+  std::string name = "reliability_actor";
 };
 
 caf::behavior boostrap_reliability_actor(caf::stateful_actor<reliability_state>* self,

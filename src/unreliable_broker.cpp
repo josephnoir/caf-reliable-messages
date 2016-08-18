@@ -10,6 +10,7 @@
 
 #include <caf/config.hpp>
 
+#include "include/utility.hpp"
 #include "include/reliability_actor.hpp"
 #include "include/unreliable_broker.hpp"
 
@@ -29,7 +30,6 @@ bernoulli_distribution lost_distribution{0.90};
 } // namespace anonymous
 
 void write_int(broker* self, connection_handle hdl, uint64_t value) {
-  // write two uint32 values instead (htonl does not work for 64bit integers)
   write_int(self, hdl, static_cast<uint32_t>(value));
   write_int(self, hdl, static_cast<uint32_t>(value >> sizeof(uint32_t)));
 }
@@ -48,7 +48,7 @@ behavior broker_impl(broker* self, connection_handle hdl, const actor& buddy) {
   self->monitor(buddy);
   self->set_down_handler([=](down_msg& dm) {
     if (dm.source == buddy) {
-      aout(self) << "our buddy is down" << endl;
+      aout(self) << "Broker's buddy is down." << endl;
       self->quit(dm.reason);
     }
   });
@@ -63,7 +63,7 @@ behavior broker_impl(broker* self, connection_handle hdl, const actor& buddy) {
   return {
     [=](const connection_closed_msg& msg) {
       if (msg.handle == hdl) {
-        aout(self) << "connection closed" << endl;
+        aout(self) << "Broker connection closed." << endl;
         self->send_exit(buddy, exit_reason::remote_link_unreachable);
         self->quit(exit_reason::remote_link_unreachable);
       }
@@ -76,15 +76,17 @@ behavior broker_impl(broker* self, connection_handle hdl, const actor& buddy) {
       read_int(msg.buf.data() + sizeof(uint64_t), seq);
       int32_t ival;
       read_int(msg.buf.data() + sizeof(uint64_t) + sizeof(seq_num_t), ival);
-      aout(self) << "[" << seq << "] Incoming {"
-                     << to_string(atm) << ", " << ival << "}." << endl;
+      reliable_msg rmsg{atm, seq, ival};
       // loose some messages
       if (lost_distribution(gen)) {
         // "network" delay for the rest
         auto delay = milliseconds{delay_distribution(gen) * 100};
-        self->delayed_send(buddy, delay, reliable_msg{atm, seq, ival});
+        aout(self) << "[" << seq << "] Incoming " << to_string(rmsg)
+                   << " with delay " << delay.count() << "ms." << endl;
+        self->delayed_send(buddy, delay, recv_atom::value, rmsg);
       } else {
-        aout(self) << "[" << seq << "] Message lost." << endl;
+        aout(self) << "[" << seq << "] Incoming message " << to_string(rmsg) << " lost."
+                   << endl;
       }
     }, 
     [=] (send_atom, const reliable_msg& msg) {
@@ -96,15 +98,15 @@ behavior broker_impl(broker* self, connection_handle hdl, const actor& buddy) {
 }
 
 behavior server(broker* self, const actor& buddy) {
-  aout(self) << "server is running" << endl;
+  aout(self) << "Server is running." << endl;
   return {
     [=](const new_connection_msg& msg) {
-      aout(self) << "server accepted new connection" << endl;
+      aout(self) << "Server accepted new connection." << endl;
       // by forking into a new broker, we are no longer
       // responsible for the connection
       auto impl = self->fork(broker_impl, msg.handle, buddy);
       print_on_exit(impl, "broker_impl");
-      aout(self) << "quit server (only accept 1 connection)" << endl;
+      aout(self) << "Quit server (only accept 1 connection)." << endl;
       self->quit();
     }
   };
