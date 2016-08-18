@@ -48,7 +48,7 @@ behavior broker_impl(broker* self, connection_handle hdl, const actor& buddy) {
   self->monitor(buddy);
   self->set_down_handler([=](down_msg& dm) {
     if (dm.source == buddy) {
-      aout(self) << "Broker's buddy is down." << endl;
+      aout(self) << "[B] Buddy is down." << endl;
       self->quit(dm.reason);
     }
   });
@@ -63,7 +63,7 @@ behavior broker_impl(broker* self, connection_handle hdl, const actor& buddy) {
   return {
     [=](const connection_closed_msg& msg) {
       if (msg.handle == hdl) {
-        aout(self) << "Broker connection closed." << endl;
+        aout(self) << "[B] Connection closed." << endl;
         self->send_exit(buddy, exit_reason::remote_link_unreachable);
         self->quit(exit_reason::remote_link_unreachable);
       }
@@ -81,11 +81,11 @@ behavior broker_impl(broker* self, connection_handle hdl, const actor& buddy) {
       if (lost_distribution(gen)) {
         // "network" delay for the rest
         auto delay = milliseconds{delay_distribution(gen) * 100};
-        aout(self) << "[" << seq << "] Incoming " << to_string(rmsg)
-                   << " with delay " << delay.count() << "ms." << endl;
+        aout(self) << "[B][" << seq << "] Incoming " << to_string(rmsg)
+                   << " with " << delay.count() << "ms delay." << endl;
         self->delayed_send(buddy, delay, recv_atom::value, rmsg);
       } else {
-        aout(self) << "[" << seq << "] Incoming message " << to_string(rmsg) << " lost."
+        aout(self) << "[B][" << seq << "] Incoming message " << to_string(rmsg) << " lost."
                    << endl;
       }
     }, 
