@@ -40,7 +40,7 @@ void caf_main(actor_system& system, const config& cfg) {
   if (cfg.server_mode) {
     cout << "run in server mode" << endl;
     auto application = system.spawn(pong);
-    auto reliability = system.spawn(boostrap_reliability_actor, application);
+    auto reliability = system.spawn(init_reliability_actor, application);
     auto server = system.middleman().spawn_server(relm::server, cfg.port,
                                                   reliability);
     if (!server) {
@@ -54,7 +54,7 @@ void caf_main(actor_system& system, const config& cfg) {
     return;
   }
   auto application = system.spawn(ping, size_t{42});
-  auto reliability = system.spawn(boostrap_reliability_actor, application);
+  auto reliability = system.spawn(init_reliability_actor, application);
   auto client = system.middleman().spawn_client(broker_impl, cfg.host,
                                                 cfg.port, reliability);
   if (!client) {

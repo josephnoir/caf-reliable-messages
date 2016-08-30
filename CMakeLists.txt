@@ -70,6 +70,7 @@ set(SOURCES
   src/main.cpp
   src/utility.cpp
   src/ping_pong.cpp
+  src/reliable_msg.cpp
   src/unreliable_broker.cpp
   src/reliability_actor.cpp
 )
