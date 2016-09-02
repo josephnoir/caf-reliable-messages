@@ -20,8 +20,8 @@ using send_acks_atom = caf::atom_constant<caf::atom("send_acks")>;
 
 struct reliability_state {
   int16_t unacked = 0;
-  int32_t seq_send = 0;
-  int32_t seq_recv = 0;
+  int32_t seq_send = 0; // next sequence number to send
+  int32_t seq_recv = 0; // next sequence number to receive
   std::vector<reliable_msg> inbox;   // missing previous seq
   std::vector<reliable_msg> outbox;  // requires acks from dest
   std::string name = "reliability_actor";

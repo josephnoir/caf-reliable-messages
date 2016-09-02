@@ -22,6 +22,10 @@ using namespace std;
 using namespace caf;
 using namespace relm;
 
+namespace {
+
+const size_t PING_PONGS = 20;
+
 class config : public actor_system_config {
 public:
   uint16_t port = 0;
@@ -53,7 +57,7 @@ void caf_main(actor_system& system, const config& cfg) {
     print_on_exit(*server, "server");
     return;
   }
-  auto application = system.spawn(ping, size_t{42});
+  auto application = system.spawn(ping, size_t{PING_PONGS});
   auto reliability = system.spawn(init_reliability_actor, application);
   auto client = system.middleman().spawn_client(broker_impl, cfg.host,
                                                 cfg.port, reliability);
@@ -67,5 +71,7 @@ void caf_main(actor_system& system, const config& cfg) {
   print_on_exit(*client, "client");
   send_as(reliability, application, kickoff_atom::value, reliability);
 }
+
+} // namespace anonymous
 
 CAF_MAIN(io::middleman)

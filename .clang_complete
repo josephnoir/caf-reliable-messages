@@ -1,3 +1,6 @@
+-Isrc
 -Iinclude
--I/Users/noir/Git/actor-framework/libcaf_core/
+-I/usr/include
+-I/usr/local/include
 -I/Users/noir/Git/actor-framework/libcaf_io/
+-I/Users/noir/Git/actor-framework/libcaf_core/

@@ -26,6 +26,7 @@ namespace {
 random_device rng;
 std::mt19937 gen{rng()};
 // same as negative_binomial_distribution<> d(1, 0.5):
+int32_t delay_multiplier = 500;
 geometric_distribution<> delay_distribution;
 bernoulli_distribution lost_distribution{0.90};
 } // namespace anonymous
@@ -83,13 +84,12 @@ behavior broker_impl(broker* self, connection_handle hdl, const actor& buddy) {
       // loose some messages
       if (lost_distribution(gen)) {
         // "network" delay for the rest
-        auto delay = milliseconds{delay_distribution(gen) * 100};
-        aout(self) << "[B][" << msg.seq << "] Incoming " << to_string(msg)
-                   << " with " << delay.count() << "ms delay." << endl;
+        auto delay = milliseconds{delay_distribution(gen) * delay_multiplier};
+        // aout(self) << "[B][" << msg.seq << "][>>] " << to_string(msg)
+                   // << " with " << delay.count() << "ms delay" << endl;
         self->delayed_send(buddy, delay, recv_atom::value, msg);
       } else {
-        aout(self) << "[B][" << msg.seq << "] Incoming message "
-                   << to_string(msg) << " lost." << endl;
+        // aout(self) << "[B][" << msg.seq << "][X] " << to_string(msg) << endl;
       }
     },
     [=] (send_atom, const reliable_msg& msg) {
